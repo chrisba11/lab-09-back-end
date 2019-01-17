@@ -16,7 +16,7 @@ app.use(cors());
 app.get('/location', searchToLatLong);
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
-app.get('/movies', getMovies)
+app.get('/movies', getMovies);
 
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
@@ -78,7 +78,7 @@ function getMovies(request, response){
   .catch(error => handleError(error, response));
 }
 
-function Location (query, apiResult) {
+function Location(query, apiResult) {
   this.search_query = query;
   this.formatted_query = apiResult.body.results[0].formatted_address;
   this.latitude = apiResult.body.results[0].geometry.location.lat;
@@ -90,7 +90,7 @@ function Weather(data){
   this.time = new Date(data.time * 1000).toString().slice(0,15);
 }
 
-function Food (food) {
+function Food(food) {
   this.name = food.name;
   this.rating = food.rating;
   this.price = food.price;
