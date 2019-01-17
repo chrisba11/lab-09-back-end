@@ -21,7 +21,7 @@ client.on('err', err => console.log(err));
 app.use(cors());
 
 //declaring the endpoints
-app.get('/location', searchToLatLong);
+app.get('/location', getLocation);
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
@@ -35,18 +35,37 @@ function handleError(error, response){
   if(response) response.status(500).send('Sorry, something went wrong!');
 }
 
-//pull in location data from the google places API & creates a new location object
-function searchToLatLong(request, response){
-  const url= `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.GEOCODE_API_KEY}`;
+function getLocation(request, response){
+  const locationHandler = {
+    query: request.query.data,
 
-  return superAgent.get(url)
-    .then(apiResponse=>{
-      let location = new Location(request.query.data, apiResponse);
-      response.send(location);
-    })
-    //catch errors for bad requests
-    .catch(error => handleError(error, response));
+    cacheHit: (results) => {
+      console.log('Got data from SQL');
+      response.send(results.rows[0]);
+    },
+
+    cacheMiss: () => {
+      Location.fetchLocation(request.query.data)
+        .then(data => response.send(data));
+    },
+  };
+  Location.lookupLocation(locationHandler);
 }
+
+
+
+//pull in location data from the google places API & creates a new location object
+// function searchToLatLong(request, response){
+//   const url= `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.GEOCODE_API_KEY}`;
+
+//   return superAgent.get(url)
+//     .then(apiResponse=>{
+//       let location = new Location(request.query.data, apiResponse);
+//       response.send(location);
+//     })
+//     //catch errors for bad requests
+//     .catch(error => handleError(error, response));
+// }
 
 
 //pulls data from the darksky api and creates a new weather object for 8 days
@@ -130,3 +149,46 @@ function Movie(film){
   this.image_url = `https://image.tmdb.org/t/p/w500/${film.poster_path}`;
   this.overview = film.overview;
 }
+
+Location.fetchLocation = (query) => {
+  const url= `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
+
+  return superAgent.get(url)
+    .then( apiResults => {
+      console.log('Got results from API');
+
+      if( ! apiResults.body.results.length){ throw 'No results'; }
+      else {
+        let location = new Location(query, apiResults);
+
+        return location.save()
+          .then( result =>{
+            location.id = result.rows[0].id
+            return location;
+          })
+      }
+    });
+};
+
+Location.lookupLocation = (handler) => {
+  const SQL = `SELECT * FROM locations WHERE search_query =$1`;
+  const values = [handler.query];
+  return client.query( SQL, values )
+    .then( results => {
+      if( results.rowCount > 0 ) {
+        handler.cacheHit(results);
+      }
+      else {
+        handler.cacheMiss();
+      }
+    })
+    .catch( console.error );
+};
+
+Location.prototype.save = function () {
+  let SQL = `INSERT INTO locations (search_query, formatted_query, latitude, longitude)
+    VALUES($1, $2, $3, $4) RETURNING id`;
+
+  let values = [this.search_query, this.formatted_query, this.latitude, this.longitude];
+  return client.query(SQL, values);
+};
