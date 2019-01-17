@@ -40,7 +40,7 @@ function getLocation(request, response){
     query: request.query.data,
 
     cacheHit: (results) => {
-      console.log('Got data from SQL');
+      console.log('Got LOCATION data from SQL');
       response.send(results.rows[0]);
     },
 
@@ -69,18 +69,18 @@ function getLocation(request, response){
 
 
 //pulls data from the darksky api and creates a new weather object for 8 days
-function getWeather(request, response){
-  const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+// function getWeather(request, response){
+//   const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
 
-  return superAgent.get(url)
-    .then(weatherResponse =>{
-      const weatherSummaries = weatherResponse.body.daily.data.map(day => {
-        return new Weather(day);
-      });
-      response.send(weatherSummaries);
-    })
-    .catch(error => handleError(error, response));
-}
+//   return superAgent.get(url)
+//     .then(weatherResponse =>{
+//       const weatherSummaries = weatherResponse.body.daily.data.map(day => {
+//         return new Weather(day);
+//       });
+//       response.send(weatherSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
 
 
 //pull data from the yelp api & create a new Food object with the yelp data.
@@ -155,9 +155,10 @@ Location.fetchLocation = (query) => {
 
   return superAgent.get(url)
     .then( apiResults => {
-      console.log('Got results from API');
+      console.log('Got LOCATION results from API');
+      console.log(apiResults.body);
 
-      if( ! apiResults.body.results.length){ throw 'No results'; }
+      if( ! apiResults.body.results.length){ throw 'No LOCATION results'; }
       else {
         let location = new Location(query, apiResults);
 
@@ -171,7 +172,7 @@ Location.fetchLocation = (query) => {
 };
 
 Location.lookupLocation = (handler) => {
-  const SQL = `SELECT * FROM locations WHERE search_query =$1`;
+  const SQL = `SELECT * FROM locations WHERE search_query=$1`;
   const values = [handler.query];
   return client.query( SQL, values )
     .then( results => {
@@ -191,4 +192,55 @@ Location.prototype.save = function () {
 
   let values = [this.search_query, this.formatted_query, this.latitude, this.longitude];
   return client.query(SQL, values);
+};
+
+
+function getWeather(request, response) {
+  const handler = {
+    location: request.query.data,
+    cacheHit: function( result ) {
+      response.send(result.rows);
+    },
+    cacheMiss: function() {
+      Weather.fetch(request.query.data)
+        .then(results => response.send(results))
+        .catch(console.error);
+    },
+  };
+  Weather.lookup(handler);
+}
+
+Weather.fetch = function( location ) {
+  const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${location.latitude},${location.longitude}`;
+  return superAgent.get(url)
+    .then(result => {
+      const weatherSummaries = result.body.daily.data.map(day => {
+        const summary = new Weather(day);
+        summary.save(location.id);
+        return summary;
+      });
+      return weatherSummaries;
+    });
+};
+
+Weather.prototype.save = function(id) {
+  const SQL = `INSERT INTO weathers (forecast, time, location_id) VALUES ($1, $2, $3);`;
+  const values = Object.values(this);
+  values.push(id);
+  client.query(SQL, values);
+};
+
+Weather.lookup = function(handler) {
+  const SQL = `SELECT * FROM weathers WHERE location_id=$1;`;
+  client.query(SQL, [handler.location.id])
+    .then(result => {
+      if(result.rowCount > 0) {
+        console.log('Got WEATHER data from SQL');
+        handler.cacheHit(result);
+      } else {
+        console.log('Got WEATHER data from API');
+        handler.cacheMiss();
+      }
+    })
+    .catch(error => handleError(error));
 };
