@@ -207,7 +207,7 @@ function getWeather(request, response) {
         .catch(console.error);
     },
   };
-  Weather.lookup(handler);
+  lookup(handler, 'weathers');
 }
 
 Weather.fetch = function( location ) {
@@ -230,15 +230,15 @@ Weather.prototype.save = function(id) {
   client.query(SQL, values);
 };
 
-Weather.lookup = function(handler) {
-  const SQL = `SELECT * FROM weathers WHERE location_id=$1;`;
+function lookup (handler, table){
+  const SQL = `SELECT * FROM ${table} WHERE location_id=$1;`;
   client.query(SQL, [handler.location.id])
     .then(result => {
       if(result.rowCount > 0) {
-        console.log('Got WEATHER data from SQL');
+        console.log('Got data from SQL');
         handler.cacheHit(result);
       } else {
-        console.log('Got WEATHER data from API');
+        console.log('Got data from API');
         handler.cacheMiss();
       }
     })
