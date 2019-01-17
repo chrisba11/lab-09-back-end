@@ -13,6 +13,10 @@ const app = express();
 
 const PORT = process.env.PORT;
 
+//databse setup instantiating our new client
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+client.on('err', err => console.log(err));
 
 app.use(cors());
 
