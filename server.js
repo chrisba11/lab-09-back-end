@@ -56,10 +56,9 @@ function getYelp(request, response){
   return superAgent.get(url)
     .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
     .then(yelpResponse => {
-      const newYelp = [];
-      yelpResponse.body.businesses.forEach(business => {
-        const localBusiness = new Food(business);
-        newYelp.push(localBusiness);
+      const newYelp = yelpResponse.body.businesses.map(business => {
+        return new Food(business);
+        
       });
       response.send(newYelp);
     })
