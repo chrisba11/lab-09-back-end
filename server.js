@@ -4,6 +4,7 @@
 const express = require('express');
 const cors = require('cors');
 const superAgent = require('superagent');
+const pg = require('pg');
 
 require('dotenv').config();
 
@@ -12,6 +13,10 @@ const app = express();
 
 const PORT = process.env.PORT;
 
+//databse setup instantiating our new client
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+client.on('err', err => console.log(err));
 
 app.use(cors());
 
@@ -68,7 +73,7 @@ function getYelp(request, response){
     .then(yelpResponse => {
       const newYelp = yelpResponse.body.businesses.map(business => {
         return new Food(business);
-        
+
       });
       response.send(newYelp);
     })
@@ -82,10 +87,10 @@ function getMovies(request, response){
 
   return superAgent.get(url)
     .then(movieResponse => {
-        const movieSummaries = movieResponse.body.results.map(movie =>{
+      const movieSummaries = movieResponse.body.results.map(movie =>{
         return new Movie(movie);
-        });
-        response.send(movieSummaries);
+      });
+      response.send(movieSummaries);
     })
     .catch(error => handleError(error, response));
 }
