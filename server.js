@@ -84,20 +84,20 @@ function getLocation(request, response){
 
 
 //pull data from the yelp api & create a new Food object with the yelp data.
-function getYelp(request, response){
-  const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
+// function getYelp(request, response){
+//   const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
 
-  return superAgent.get(url)
-    .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
-    .then(yelpResponse => {
-      const newYelp = yelpResponse.body.businesses.map(business => {
-        return new Food(business);
+//   return superAgent.get(url)
+//     .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
+//     .then(yelpResponse => {
+//       const newYelp = yelpResponse.body.businesses.map(business => {
+//         return new Food(business);
 
-      });
-      response.send(newYelp);
-    })
-    .catch(error => handleError(error, response));
-}
+//       });
+//       response.send(newYelp);
+//     })
+//     .catch(error => handleError(error, response));
+// }
 
 //pull data from the movie database and create a new movie object.
 function getMovies(request, response){
@@ -130,8 +130,8 @@ function Weather(data){
   this.time = new Date(data.time * 1000).toString().slice(0,15);
 }
 
-//Create a new Food object with the correct yelp data as specified above.
-function Food(food) {
+//Create a new yelp object with the correct yelp data as specified above.
+function Yelp(food) {
   this.name = food.name;
   this.rating = food.rating;
   this.price = food.price;
@@ -142,7 +142,7 @@ function Food(food) {
 //Create a new movie object with the specified data as requested above.
 function Movie(film){
   this.title = film.title;
-  this.released_on = film.released_date;
+  this.released_on = film.release_date;
   this.total_votes = film.vote_count;
   this.average_votes = film.vote_average;
   this.popularity = film.popularity;
@@ -210,6 +210,21 @@ function getWeather(request, response) {
   lookup(handler, 'weathers');
 }
 
+function getYelp(request, response){
+  const handler = {
+    location: request.query.data,
+    cacheHit: function( result ){
+      response.send(result.rows);
+    },
+    cacheMiss: function() {
+      getYelp.fetch(request.query.data)
+        .then(results => response.send(results))
+        .catch(console.error);
+    },
+  };
+  lookup(handler, 'yelps');
+}
+
 Weather.fetch = function( location ) {
   const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${location.latitude},${location.longitude}`;
   return superAgent.get(url)
@@ -223,6 +238,20 @@ Weather.fetch = function( location ) {
     });
 };
 
+getYelp.fetch = function(location){
+    const url = `https://api.yelp.com/v3/businesses/search?latitude=${location.latitude}&longitude=${location.longitude}`;
+    return superAgent.get(url)
+      .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
+      .then(result => {
+        const yelpSummaries = result.body.businesses.map(business =>{
+          const summary = new Yelp(business);
+          summary.save(location.id);
+          return summary;
+        });
+        return yelpSummaries;
+      });
+};
+
 Weather.prototype.save = function(id) {
   const SQL = `INSERT INTO weathers (forecast, time, location_id) VALUES ($1, $2, $3);`;
   const values = Object.values(this);
@@ -230,8 +259,17 @@ Weather.prototype.save = function(id) {
   client.query(SQL, values);
 };
 
+Yelp.prototype.save = function(id) {
+  const SQL = `INSERT INTO yelps (name, rating, price, image_url, url, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
+  const values = Object.values(this);
+  values.push(id);
+  client.query(SQL, values);
+}
+
 function lookup (handler, table){
   const SQL = `SELECT * FROM ${table} WHERE location_id=$1;`;
+  const values = [];
+  values.push(handler.location.id);
   client.query(SQL, [handler.location.id])
     .then(result => {
       if(result.rowCount > 0) {
