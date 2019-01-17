@@ -40,7 +40,7 @@ function getLocation(request, response){
     query: request.query.data,
 
     cacheHit: (results) => {
-      console.log('Got data from SQL');
+      console.log('Got LOCATION data from SQL');
       response.send(results.rows[0]);
     },
 
@@ -155,9 +155,10 @@ Location.fetchLocation = (query) => {
 
   return superAgent.get(url)
     .then( apiResults => {
-      console.log('Got results from API');
+      console.log('Got LOCATION results from API');
+      console.log(apiResults.body);
 
-      if( ! apiResults.body.results.length){ throw 'No results'; }
+      if( ! apiResults.body.results.length){ throw 'No LOCATION results'; }
       else {
         let location = new Location(query, apiResults);
 
@@ -171,7 +172,7 @@ Location.fetchLocation = (query) => {
 };
 
 Location.lookupLocation = (handler) => {
-  const SQL = `SELECT * FROM locations WHERE search_query =$1`;
+  const SQL = `SELECT * FROM locations WHERE search_query=$1`;
   const values = [handler.query];
   return client.query( SQL, values )
     .then( results => {
@@ -220,4 +221,26 @@ Weather.fetch = function( location ) {
       });
       return weatherSummaries;
     });
+};
+
+Weather.prototype.save = function(id) {
+  const SQL = `INSERT INTO weathers (forecast, time, location_id) VALUES ($1, $2, $3);`;
+  const values = Object.values(this);
+  values.push(id);
+  client.query(SQL, values);
+};
+
+Weather.lookup = function(handler) {
+  const SQL = `SELECT * FROM weathers WHERE location_id=$1;`;
+  client.query(SQL, [handler.location.id])
+    .then(result => {
+      if(result.rowCount > 0) {
+        console.log('Got WEATHER data from SQL');
+        handler.cacheHit(result);
+      } else {
+        console.log('Got WEATHER data from API');
+        handler.cacheMiss();
+      }
+    })
+    .catch(error => handleError(error));
 };
