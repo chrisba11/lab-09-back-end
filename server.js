@@ -35,7 +35,7 @@ function handleError(error, response){
   if(response) response.status(500).send('Sorry, something went wrong!');
 }
 
-
+//
 function getLocation(request, response){
   const locationHandler = {
     query: request.query.data,
@@ -83,20 +83,19 @@ function Location(query, apiResult) {
   this.longitude = apiResult.body.results[0].geometry.location.lng;
 }
 
-Location.prototype.save = function () {
+Location.prototype.save = function() {
   let SQL = `INSERT INTO locations (search_query, formatted_query, latitude, longitude)
     VALUES($1, $2, $3, $4) RETURNING id`;
-
-  let values = [this.search_query, this.formatted_query, this.latitude, this.longitude];
+  let values = Object.values(this);
   return client.query(SQL, values);
 };
 
 Location.lookupLocation = (handler) => {
   const SQL = `SELECT * FROM locations WHERE search_query=$1`;
   const values = [handler.query];
-  return client.query( SQL, values )
+  return client.query(SQL, values)
     .then( results => {
-      if( results.rowCount > 0 ) {
+      if(results.rowCount > 0) {
         handler.cacheHit(results);
       }
       else {
@@ -109,7 +108,7 @@ Location.lookupLocation = (handler) => {
 function getWeather(request, response) {
   const handler = {
     location: request.query.data,
-    cacheHit: function( result ) {
+    cacheHit: function(result) {
       response.send(result.rows);
     },
     cacheMiss: function() {
@@ -121,7 +120,7 @@ function getWeather(request, response) {
   lookup(handler, 'weathers');
 }
 
-Weather.fetch = function( location ) {
+Weather.fetch = function(location) {
   const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${location.latitude},${location.longitude}`;
   return superAgent.get(url)
     .then(result => {
@@ -135,7 +134,7 @@ Weather.fetch = function( location ) {
 };
 
 //create a new Weather object with the forecast & date, correctly formatted.
-function Weather(data){
+function Weather(data) {
   this.forecast = data.summary;
   this.time = new Date(data.time * 1000).toString().slice(0,15);
 }
