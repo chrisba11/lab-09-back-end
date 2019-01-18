@@ -201,7 +201,8 @@ function getMovies(request, response) {
       response.send(result.rows);
     },
     cacheMiss: function() {
-      Movie.fetch(this.location)
+      console.log(request.query.data);
+      Movie.fetch(request.query.data)
         .then(results => response.send(results))
         .catch(console.error);
     },
@@ -210,7 +211,8 @@ function getMovies(request, response) {
 }
 
 Movie.fetch = function(location) {
-  const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${location}`;
+  const city = location.formatted_query.split(',')[0];
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${city}`;
   return superAgent.get(url)
     .then(result => {
       const movieSummaries = result.body.results.map(movie => {

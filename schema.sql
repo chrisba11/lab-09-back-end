@@ -34,11 +34,11 @@ CREATE TABLE movies(
   id SERIAL PRIMARY KEY,
   title VARCHAR(255),
   released_on VARCHAR(255),
-  total_votes NUMERIC(6),
-  average_votes NUMERIC(1,1),
-  popularity NUMERIC(4,3),
+  total_votes NUMERIC(6,0),
+  average_votes NUMERIC(3,1),
+  popularity NUMERIC(6,3),
   image_url VARCHAR(255),
-  overview VARCHAR(255),
+  overview TEXT,
   location_id INTEGER NOT NULL,
   FOREIGN KEY (location_id) REFERENCES locations (id)
 );
