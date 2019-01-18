@@ -377,3 +377,7 @@ function Trail(data) {
 //push movie to DB
 Trail.prototype.save = function(id) {
   const SQL = `INSERT INTO trails (trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
+  const values = Object.values(this);
+  values.push(id);
+  client.query(SQL, values);
+}

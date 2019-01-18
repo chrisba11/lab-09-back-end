@@ -45,16 +45,15 @@ CREATE TABLE movies(
   FOREIGN KEY (location_id) REFERENCES locations (id)
 );
 
-<<<<<<< trails
-
-
-
-
-
-
-
-
-
+CREATE TABLE meetups(
+  id SERIAL PRIMARY KEY,
+  link VARCHAR(255),
+  name VARCHAR(255),
+  host VARCHAR(255),
+  creation_date VARCHAR(255),
+  location_id INTEGER NOT NULL,
+  FOREIGN KEY (location_id) REFERENCES locations (id)
+);
 
 CREATE TABLE trails(
   trail_url VARCHAR(255),
@@ -69,15 +68,4 @@ CREATE TABLE trails(
   summary TEXT,
   location_id INTEGER NOT NULL,
   FOREIGN KEY (location_id) REFERENCES locations (id)
-)
-=======
-CREATE TABLE meetups(
-  id SERIAL PRIMARY KEY,
-  link VARCHAR(255),
-  name VARCHAR(255),
-  host VARCHAR(255),
-  creation_date VARCHAR(255),
-  location_id INTEGER NOT NULL,
-  FOREIGN KEY (location_id) REFERENCES locations (id)
 );
->>>>>>> master
