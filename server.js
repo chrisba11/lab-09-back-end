@@ -100,19 +100,19 @@ function getLocation(request, response){
 // }
 
 //pull data from the movie database and create a new movie object.
-function getMovies(request, response){
-  const city = request.query.data.formatted_query.split(',')[0];
-  const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${city}`;
+// function getMovies(request, response){
+//   const city = request.query.data.formatted_query.split(',')[0];
+//   const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${city}`;
 
-  return superAgent.get(url)
-    .then(movieResponse => {
-      const movieSummaries = movieResponse.body.results.map(movie =>{
-        return new Movie(movie);
-      });
-      response.send(movieSummaries);
-    })
-    .catch(error => handleError(error, response));
-}
+//   return superAgent.get(url)
+//     .then(movieResponse => {
+//       const movieSummaries = movieResponse.body.results.map(movie =>{
+//         return new Movie(movie);
+//       });
+//       response.send(movieSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
 
 
 //Constructor functions:
@@ -217,12 +217,27 @@ function getYelp(request, response){
       response.send(result.rows);
     },
     cacheMiss: function() {
-      getYelp.fetch(request.query.data)
+      Yelp.fetch(request.query.data)
         .then(results => response.send(results))
         .catch(console.error);
     },
   };
   lookup(handler, 'yelps');
+}
+
+function getMovies(request, response) {
+  const handler = {
+    location: request.query.data,
+    cacheHit: function (result) {
+      response.send(result.rows);
+    },
+    cacheMiss: function() {
+      Movies.fetch(this.location)
+        .then(results => response.send(results))
+        .catch(console.error);
+    },
+  };
+  lookup(handler, 'movies');
 }
 
 Weather.fetch = function( location ) {
@@ -238,18 +253,31 @@ Weather.fetch = function( location ) {
     });
 };
 
-getYelp.fetch = function(location){
-    const url = `https://api.yelp.com/v3/businesses/search?latitude=${location.latitude}&longitude=${location.longitude}`;
-    return superAgent.get(url)
-      .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
-      .then(result => {
-        const yelpSummaries = result.body.businesses.map(business =>{
-          const summary = new Yelp(business);
-          summary.save(location.id);
-          return summary;
-        });
-        return yelpSummaries;
+Yelp.fetch = function(location){
+  const url = `https://api.yelp.com/v3/businesses/search?latitude=${location.latitude}&longitude=${location.longitude}`;
+  return superAgent.get(url)
+    .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
+    .then(result => {
+      const yelpSummaries = result.body.businesses.map(business => {
+        const summary = new Yelp(business);
+        summary.save(location.id);
+        return summary;
       });
+      return yelpSummaries;
+    });
+};
+
+Movie.fetch = function(location) {
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${city}`;
+  return superAgent.get(url)
+    .then(result => {
+      const movieSummaries = result.body.results.map(movie => {
+        const summary = new Movie(movie);
+        summary.save(location.id);
+        return summary;
+      });
+      return movieSummaries;
+    });
 };
 
 Weather.prototype.save = function(id) {
