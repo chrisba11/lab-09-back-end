@@ -40,7 +40,7 @@ function getLocation(request, response){
   const locationHandler = {
     query: request.query.data,
 
-    cacheHit: (results) => {
+    cacheHit: results => {
       console.log('Got LOCATION data from SQL');
       response.send(results.rows[0]);
     },
@@ -53,20 +53,20 @@ function getLocation(request, response){
   Location.lookupLocation(locationHandler);
 }
 
-Location.fetchLocation = (query) => {
+Location.fetchLocation = query => {
   const url= `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
 
   return superAgent.get(url)
-    .then( apiResults => {
+    .then(apiResults => {
       console.log('Got LOCATION results from API');
       console.log(apiResults.body);
 
-      if( ! apiResults.body.results.length){ throw 'No LOCATION results'; }
+      if(!apiResults.body.results.length){ throw 'No LOCATION results'; }
       else {
         let location = new Location(query, apiResults);
 
         return location.save()
-          .then( result =>{
+          .then(result =>{
             location.id = result.rows[0].id
             return location;
           })
@@ -90,11 +90,11 @@ Location.prototype.save = function() {
   return client.query(SQL, values);
 };
 
-Location.lookupLocation = (handler) => {
+Location.lookupLocation = handler => {
   const SQL = `SELECT * FROM locations WHERE search_query=$1`;
   const values = [handler.query];
   return client.query(SQL, values)
-    .then( results => {
+    .then(results => {
       if(results.rowCount > 0) {
         handler.cacheHit(results);
       }
@@ -147,10 +147,10 @@ Weather.prototype.save = function(id) {
 };
 
 
-function getYelp(request, response){
+function getYelp(request, response) {
   const handler = {
     location: request.query.data,
-    cacheHit: function( result ){
+    cacheHit: function(result) {
       response.send(result.rows);
     },
     cacheMiss: function() {
@@ -162,7 +162,7 @@ function getYelp(request, response){
   lookup(handler, 'yelps');
 }
 
-Yelp.fetch = function(location){
+Yelp.fetch = function(location) {
   const url = `https://api.yelp.com/v3/businesses/search?latitude=${location.latitude}&longitude=${location.longitude}`;
   return superAgent.get(url)
     .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
