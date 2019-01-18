@@ -25,6 +25,8 @@ app.get('/location', getLocation);
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
+app.get('/meetups', getMeetups);
+
 
 app.get('/trails', getTrails);
 
@@ -281,48 +283,49 @@ Movie.prototype.save = function(id) {
 
 //MEETUP FUNCTIONS ------------------------------------------------------------------------------------------------
 
+function getMeetups(request, response){
+  console.log('runs get meetups');
+  const handler = {
+    location: request.query.data,
+    cacheHit: function(result){
+      response.send(result.rows);
+    },
+    cacheMiss: function() {
+      Meetup.fetch(request.query.data)
+        .then(results => response.send(results))
+        .catch(console.error);
+    },
+  };
+  lookup(handler, 'meetups');
+}
 
+Meetup.fetch = function(location){
+  const url = `https://api.meetup.com/find/upcoming_events?key=${process.env.MEETUP_API}&sign=true&photo-host=public&lon=${location.longitude}&page=20&lat=${location.latitude}`;
+  return superAgent.get(url)
+    .then(result => {
+      const meetupSummaries = result.body.events.map(meet => {
+        console.log(meet);
+        const summary = new Meetup(meet);
+        summary.save(location.id);
+        return summary;
+      });
+      return meetupSummaries;
+    });
+};
 
+function Meetup(meet){
+  this.link = meet.link;
+  this.name = meet.name;
+  this.host = meet.group.name;
+  this.creation_date =  new Date(meet.created).toString().slice(0,15) === 'Invalid Date' ? 'No date provided.' : new Date(meet.created).toString().slice(0,15);
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Meetup.prototype.save = function(id) {
+  const SQL = `INSERT INTO meetups (link, name, host, creation_date, location_id) VALUES ($1, $2, $3, $4, $5);`;
+  const values = Object.values(this);
+  values.push(id);
+  client.query(SQL, values);
+}
 
 //HIKING FUNCTIONS ------------------------------------------------------------------------------------------------
 
@@ -374,7 +377,3 @@ function Trail(data) {
 //push movie to DB
 Trail.prototype.save = function(id) {
   const SQL = `INSERT INTO trails (trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
-  const values = Object.values(this);
-  values.push(id);
-  client.query(SQL, values);
-}
