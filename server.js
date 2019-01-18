@@ -61,18 +61,16 @@ function getLocation(request, response){
 
 //ping API for location info
 Location.fetch = query => {
-  const url= `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
 
   return superAgent.get(url)
     .then(apiResults => {
-      console.log('Got LOCATION results from API');
-
-      if(!apiResults.body.results.length){ throw 'No LOCATION results'; }
-      else {
+      if(!apiResults.body.results.length) {
+        throw 'No LOCATION results';
+      } else {
         let location = new Location(query, apiResults);
-
         return location.save()
-          .then(result =>{
+          .then(result => {
             location.id = result.rows[0].id
             return location;
           })
@@ -109,23 +107,21 @@ Location.lookup = handler => {
         handler.cacheMiss();
       }
     })
-    .catch( console.error );
+    .catch(console.error);
 };
 
 //GENERIC HELPER FUNCTIONS-----------------------------------------------------------------------------
 
 //generic lookup used for all other than location
-function lookup (handler, table){
+function lookup(handler, table) {
   const SQL = `SELECT * FROM ${table} WHERE location_id=$1;`;
   const values = [];
   values.push(handler.location.id);
   client.query(SQL, [handler.location.id])
     .then(result => {
       if(result.rowCount > 0) {
-        console.log('Got data from SQL');
         handler.cacheHit(result);
       } else {
-        console.log('Got data from API');
         handler.cacheMiss();
       }
     })
@@ -261,7 +257,7 @@ Yelp.prototype.save = function(id) {
 function getMovies(request, response) {
   const handler = {
     location: request.query.data,
-    cacheHit: function (result) {
+    cacheHit: function(result) {
       let ageOfResults = (Date.now() - result.rows[0].created_at);
       if(ageOfResults > timeouts.movies) {
         deleteByLocationId('movies', this.location.id);
@@ -320,7 +316,7 @@ function getMeetups(request, response){
   console.log('runs get meetups');
   const handler = {
     location: request.query.data,
-    cacheHit: function(result){
+    cacheHit: function(result) {
       let ageOfResults = (Date.now() - result.rows[0].created_at);
       if(ageOfResults > timeouts.meetups) {
         deleteByLocationId('meetups', this.location.id);
@@ -338,7 +334,7 @@ function getMeetups(request, response){
   lookup(handler, 'meetups');
 }
 
-Meetup.fetch = function(location){
+Meetup.fetch = function(location) {
   const url = `https://api.meetup.com/find/upcoming_events?key=${process.env.MEETUP_API}&sign=true&photo-host=public&lon=${location.longitude}&page=20&lat=${location.latitude}`;
   return superAgent.get(url)
     .then(result => {
@@ -351,7 +347,7 @@ Meetup.fetch = function(location){
     });
 };
 
-function Meetup(meet){
+function Meetup(meet) {
   this.created_at = Date.now();
   this.link = meet.link;
   this.name = meet.name;
