@@ -83,6 +83,7 @@ Location.fetch = query => {
 
 //create a new location object that has the specified properties for each value returned above.
 function Location(query, apiResult) {
+  this.created_at = Date.now();
   this.search_query = query;
   this.formatted_query = apiResult.body.results[0].formatted_address;
   this.latitude = apiResult.body.results[0].geometry.location.lat;
@@ -173,7 +174,7 @@ function Weather(data) {
 
 //push weather to DB
 Weather.prototype.save = function(id) {
-  const SQL = `INSERT INTO weathers (forecast, time, location_id) VALUES ($1, $2, $3);`;
+  const SQL = `INSERT INTO weathers (created_at, forecast, time, location_id) VALUES ($1, $2, $3, $4);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
@@ -214,6 +215,7 @@ Yelp.fetch = function(location) {
 
 //Create a new yelp object with the correct yelp data as specified above.
 function Yelp(food) {
+  this.created_at = Date.now();
   this.name = food.name;
   this.rating = food.rating;
   this.price = food.price;
@@ -223,7 +225,7 @@ function Yelp(food) {
 
 //push yelp to DB
 Yelp.prototype.save = function(id) {
-  const SQL = `INSERT INTO yelps (name, rating, price, image_url, url, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
+  const SQL = `INSERT INTO yelps (created_at, name, rating, price, image_url, url, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
@@ -264,6 +266,7 @@ Movie.fetch = function(location) {
 
 //Create a new movie object with the specified data as requested above.
 function Movie(film) {
+  this.created_at = Date.now();
   this.title = film.title;
   this.released_on = film.release_date;
   this.total_votes = film.vote_count;
@@ -275,7 +278,7 @@ function Movie(film) {
 
 //push movie to DB
 Movie.prototype.save = function(id) {
-  const SQL = `INSERT INTO movies (title, released_on, total_votes, average_votes, popularity, image_url, overview, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
+  const SQL = `INSERT INTO movies (created_at, title, released_on, total_votes, average_votes, popularity, image_url, overview, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
@@ -314,14 +317,15 @@ Meetup.fetch = function(location){
 };
 
 function Meetup(meet){
+  this.created_at = Date.now();
   this.link = meet.link;
   this.name = meet.name;
   this.host = meet.group.name;
-  this.creation_date =  new Date(meet.created).toString().slice(0,15) === 'Invalid Date' ? 'No date provided.' : new Date(meet.created).toString().slice(0,15);
+  this.creation_date = new Date(meet.created).toString().slice(0,15) === 'Invalid Date' ? 'No date provided.' : new Date(meet.created).toString().slice(0,15);
 }
 
 Meetup.prototype.save = function(id) {
-  const SQL = `INSERT INTO meetups (link, name, host, creation_date, location_id) VALUES ($1, $2, $3, $4, $5);`;
+  const SQL = `INSERT INTO meetups (created_at, link, name, host, creation_date, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
@@ -362,6 +366,7 @@ Trail.fetch = function(location) {
 //create new trail object for each trail with the requested data
 function Trail(data) {
   const regex = /.+?[?= ]/;
+  this.created_at = Date.now();
   this.trail_url = data.url;
   this.name = data.name;
   this.location = data.location;
@@ -376,7 +381,7 @@ function Trail(data) {
 
 //push movie to DB
 Trail.prototype.save = function(id) {
-  const SQL = `INSERT INTO trails (trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
+  const SQL = `INSERT INTO trails (created_at, trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
