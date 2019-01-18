@@ -66,7 +66,6 @@ Location.fetch = query => {
   return superAgent.get(url)
     .then(apiResults => {
       console.log('Got LOCATION results from API');
-      console.log(apiResults.body);
 
       if(!apiResults.body.results.length){ throw 'No LOCATION results'; }
       else {
@@ -83,7 +82,6 @@ Location.fetch = query => {
 
 //create a new location object that has the specified properties for each value returned above.
 function Location(query, apiResult) {
-  this.created_at = Date.now();
   this.search_query = query;
   this.formatted_query = apiResult.body.results[0].formatted_address;
   this.latitude = apiResult.body.results[0].geometry.location.lat;
@@ -158,9 +156,7 @@ function getWeather(request, response) {
       if(ageOfResults > timeouts.weather) {
         deleteByLocationId('weathers', this.location.id);
         this.cacheMiss();
-        console.log('DATA WAS STALE - REPLACED')
       } else {
-        console.log('DATA IS NEW')
         response.send(result.rows);
       }
     },
@@ -189,6 +185,7 @@ Weather.fetch = function(location) {
 
 //create a new Weather object with the forecast & date, correctly formatted.
 function Weather(data) {
+  this.created_at = Date.now();
   this.forecast = data.summary;
   this.time = new Date(data.time * 1000).toString().slice(0,15);
 }
@@ -208,7 +205,13 @@ function getYelp(request, response) {
   const handler = {
     location: request.query.data,
     cacheHit: function(result) {
-      response.send(result.rows);
+      let ageOfResults = (Date.now() - result.row[0].created_at);
+      if(ageOfResults > timeouts.yelp) {
+        deleteByLocationId('yelps', this.location.id);
+        this.cacheMiss();
+      } else {
+        response.send(result.rows);
+      }
     },
     cacheMiss: function() {
       Yelp.fetch(request.query.data)
@@ -259,7 +262,13 @@ function getMovies(request, response) {
   const handler = {
     location: request.query.data,
     cacheHit: function (result) {
-      response.send(result.rows);
+      let ageOfResults = (Date.now() - result.rows[0].created_at);
+      if(ageOfResults > timeouts.weather) {
+        deleteByLocationId('weathers', this.location.id);
+        this.cacheMiss();
+      } else {
+        response.send(result.rows);
+      }
     },
     cacheMiss: function() {
       Movie.fetch(request.query.data)
@@ -312,7 +321,13 @@ function getMeetups(request, response){
   const handler = {
     location: request.query.data,
     cacheHit: function(result){
-      response.send(result.rows);
+      let ageOfResults = (Date.now() - result.rows[0].created_at);
+      if(ageOfResults > timeouts.weather) {
+        deleteByLocationId('weathers', this.location.id);
+        this.cacheMiss();
+      } else {
+        response.send(result.rows);
+      }
     },
     cacheMiss: function() {
       Meetup.fetch(request.query.data)
@@ -328,7 +343,6 @@ Meetup.fetch = function(location){
   return superAgent.get(url)
     .then(result => {
       const meetupSummaries = result.body.events.map(meet => {
-        console.log(meet);
         const summary = new Meetup(meet);
         summary.save(location.id);
         return summary;
@@ -359,7 +373,13 @@ function getTrails(request, response) {
   const handler = {
     location: request.query.data,
     cacheHit: function (result) {
-      response.send(result.rows);
+      let ageOfResults = (Date.now() - result.rows[0].created_at);
+      if(ageOfResults > timeouts.weather) {
+        deleteByLocationId('weathers', this.location.id);
+        this.cacheMiss();
+      } else {
+        response.send(result.rows);
+      }
     },
     cacheMiss: function() {
       Trail.fetch(request.query.data)
