@@ -35,7 +35,9 @@ function handleError(error, response){
   if(response) response.status(500).send('Sorry, something went wrong!');
 }
 
-//
+//LOCATION FUNCTIONS ------------------------------------------------------------------------------------------------
+
+//sending info from DB to front end, if not in DB sending from API
 function getLocation(request, response){
   const locationHandler = {
     query: request.query.data,
@@ -46,14 +48,15 @@ function getLocation(request, response){
     },
 
     cacheMiss: () => {
-      Location.fetchLocation(request.query.data)
+      Location.fetch(request.query.data)
         .then(data => response.send(data));
     },
   };
-  Location.lookupLocation(locationHandler);
+  Location.lookup(locationHandler);
 }
 
-Location.fetchLocation = query => {
+//ping API for location info
+Location.fetch = query => {
   const url= `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
 
   return superAgent.get(url)
@@ -74,7 +77,6 @@ Location.fetchLocation = query => {
     });
 };
 
-//Constructor functions:
 //create a new location object that has the specified properties for each value returned above.
 function Location(query, apiResult) {
   this.search_query = query;
@@ -83,6 +85,7 @@ function Location(query, apiResult) {
   this.longitude = apiResult.body.results[0].geometry.location.lng;
 }
 
+//push location to DB
 Location.prototype.save = function() {
   let SQL = `INSERT INTO locations (search_query, formatted_query, latitude, longitude)
     VALUES($1, $2, $3, $4) RETURNING id`;
@@ -90,7 +93,8 @@ Location.prototype.save = function() {
   return client.query(SQL, values);
 };
 
-Location.lookupLocation = handler => {
+//checking to see if info is in DB, if not ping API
+Location.lookup = handler => {
   const SQL = `SELECT * FROM locations WHERE search_query=$1`;
   const values = [handler.query];
   return client.query(SQL, values)
@@ -105,6 +109,9 @@ Location.lookupLocation = handler => {
     .catch( console.error );
 };
 
+//WEATHER FUNCTIONS ------------------------------------------------------------------------------------------------
+
+//sending info from DB to front end, if not in DB sending from API
 function getWeather(request, response) {
   const handler = {
     location: request.query.data,
@@ -120,6 +127,7 @@ function getWeather(request, response) {
   lookup(handler, 'weathers');
 }
 
+//ping API for weather info
 Weather.fetch = function(location) {
   const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${location.latitude},${location.longitude}`;
   return superAgent.get(url)
@@ -139,6 +147,7 @@ function Weather(data) {
   this.time = new Date(data.time * 1000).toString().slice(0,15);
 }
 
+//push weather to DB
 Weather.prototype.save = function(id) {
   const SQL = `INSERT INTO weathers (forecast, time, location_id) VALUES ($1, $2, $3);`;
   const values = Object.values(this);
@@ -146,7 +155,9 @@ Weather.prototype.save = function(id) {
   client.query(SQL, values);
 };
 
+//YELP FUNCTIONS ------------------------------------------------------------------------------------------------
 
+//sending info from DB to front end, if not in DB sending from API
 function getYelp(request, response) {
   const handler = {
     location: request.query.data,
@@ -162,6 +173,7 @@ function getYelp(request, response) {
   lookup(handler, 'yelps');
 }
 
+//ping API for yelp info
 Yelp.fetch = function(location) {
   const url = `https://api.yelp.com/v3/businesses/search?latitude=${location.latitude}&longitude=${location.longitude}`;
   return superAgent.get(url)
@@ -185,6 +197,7 @@ function Yelp(food) {
   this.url = food.url;
 }
 
+//push yelp to DB
 Yelp.prototype.save = function(id) {
   const SQL = `INSERT INTO yelps (name, rating, price, image_url, url, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
   const values = Object.values(this);
@@ -192,7 +205,9 @@ Yelp.prototype.save = function(id) {
   client.query(SQL, values);
 }
 
+//MOVIE FUNCTIONS ------------------------------------------------------------------------------------------------
 
+//sending info from DB to front end, if not in DB sending from API
 function getMovies(request, response) {
   const handler = {
     location: request.query.data,
@@ -209,6 +224,7 @@ function getMovies(request, response) {
   lookup(handler, 'movies');
 }
 
+//ping API for movie info
 Movie.fetch = function(location) {
   const city = location.formatted_query.split(',')[0];
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&query=${city}`;
@@ -234,12 +250,15 @@ function Movie(film){
   this.overview = film.overview;
 }
 
+//push movie to DB
 Movie.prototype.save = function(id) {
   const SQL = `INSERT INTO movies (title, released_on, total_votes, average_votes, popularity, image_url, overview, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
 }
+
+//--------------------
 
 //generic lookup used for all other than location
 function lookup (handler, table){
