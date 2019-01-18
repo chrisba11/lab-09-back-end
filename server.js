@@ -112,7 +112,7 @@ Location.lookup = handler => {
     .catch( console.error );
 };
 
-//GENERIC HELPER FUNCTIONS
+//GENERIC HELPER FUNCTIONS-----------------------------------------------------------------------------
 
 //generic lookup used for all other than location
 function lookup (handler, table){
