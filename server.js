@@ -114,7 +114,7 @@ Location.lookup = handler => {
     .catch( console.error );
 };
 
-//--------------------
+//GENERIC HELPER FUNCTIONS
 
 //generic lookup used for all other than location
 function lookup (handler, table){
@@ -134,6 +134,19 @@ function lookup (handler, table){
     .catch(error => handleError(error));
 }
 
+function deleteByLocationId(table, cityId) {
+  const SQL = `DELETE from ${table} WHERE location_id=${cityId};`;
+  return client.query(SQL);
+}
+
+const timeouts = {
+  weather: 15 * 1000,
+  yelp: 24 * 60 * 60 * 1000,
+  movies: 7 * 24 * 60 * 60 * 1000,
+  meetups: 6 * 60 * 60 * 1000,
+  trails: 3 * 60 * 60 * 1000,
+}
+
 //WEATHER FUNCTIONS ------------------------------------------------------------------------------------------------
 
 //sending info from DB to front end, if not in DB sending from API
@@ -141,7 +154,15 @@ function getWeather(request, response) {
   const handler = {
     location: request.query.data,
     cacheHit: function(result) {
-      response.send(result.rows);
+      let ageOfResults = (Date.now() - result.rows[0].created_at);
+      if(ageOfResults > timeouts.weather) {
+        deleteByLocationId('weathers', this.location.id);
+        this.cacheMiss();
+        console.log('DATA WAS STALE - REPLACED')
+      } else {
+        console.log('DATA IS NEW')
+        response.send(result.rows);
+      }
     },
     cacheMiss: function() {
       Weather.fetch(request.query.data)
