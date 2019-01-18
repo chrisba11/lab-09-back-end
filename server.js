@@ -111,6 +111,26 @@ Location.lookup = handler => {
     .catch( console.error );
 };
 
+//--------------------
+
+//generic lookup used for all other than location
+function lookup (handler, table){
+  const SQL = `SELECT * FROM ${table} WHERE location_id=$1;`;
+  const values = [];
+  values.push(handler.location.id);
+  client.query(SQL, [handler.location.id])
+    .then(result => {
+      if(result.rowCount > 0) {
+        console.log('Got data from SQL');
+        handler.cacheHit(result);
+      } else {
+        console.log('Got data from API');
+        handler.cacheMiss();
+      }
+    })
+    .catch(error => handleError(error));
+}
+
 //WEATHER FUNCTIONS ------------------------------------------------------------------------------------------------
 
 //sending info from DB to front end, if not in DB sending from API
@@ -265,6 +285,45 @@ Movie.prototype.save = function(id) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //HIKING FUNCTIONS ------------------------------------------------------------------------------------------------
 
 //sending info from DB to front end, if not in DB sending from API
@@ -304,9 +363,9 @@ function Trail(data) {
   this.name = data.name;
   this.location = data.location;
   this.length = data.length;
-  this.condition_date = new Date(data.conditionDate.slice(0,10)).slice(0,10);
+  this.condition_date = new Date(data.conditionDate).toString().slice(0,10);
   this.condition_time = new Date(data.conditionDate).toLocaleString().replace(regex, '');
-  this.conditions = data.conditionDetails;
+  this.conditions = data.conditionDetails ? data.conditionDetails : 'No Data Provided';
   this.stars = data.stars;
   this.star_votes = data.starVotes;
   this.summary = data.summary;
@@ -314,28 +373,8 @@ function Trail(data) {
 
 //push movie to DB
 Trail.prototype.save = function(id) {
-  const SQL = `INSERT INTO trails (trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`;
+  const SQL = `INSERT INTO trails (trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
-}
-
-//--------------------
-
-//generic lookup used for all other than location
-function lookup (handler, table){
-  const SQL = `SELECT * FROM ${table} WHERE location_id=$1;`;
-  const values = [];
-  values.push(handler.location.id);
-  client.query(SQL, [handler.location.id])
-    .then(result => {
-      if(result.rowCount > 0) {
-        console.log('Got data from SQL');
-        handler.cacheHit(result);
-      } else {
-        console.log('Got data from API');
-        handler.cacheMiss();
-      }
-    })
-    .catch(error => handleError(error));
 }
