@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS locations;
 
 CREATE TABLE locations(
   id SERIAL PRIMARY KEY,
+  created_at BIGINT,
   search_query VARCHAR(255),
   formatted_query VARCHAR(255),
   latitude NUMERIC(8,6),
@@ -15,6 +16,7 @@ CREATE TABLE locations(
 
 CREATE TABLE weathers(
   id SERIAL PRIMARY KEY,
+  created_at BIGINT,
   forecast VARCHAR(255),
   time VARCHAR(255),
   location_id INTEGER NOT NULL,
@@ -23,6 +25,7 @@ CREATE TABLE weathers(
 
 CREATE TABLE yelps(
   id SERIAL PRIMARY KEY,
+  created_at BIGINT,
   name VARCHAR(255),
   rating VARCHAR(255),
   price VARCHAR(255),
@@ -34,6 +37,7 @@ CREATE TABLE yelps(
 
 CREATE TABLE movies(
   id SERIAL PRIMARY KEY,
+  created_at BIGINT,
   title VARCHAR(255),
   released_on VARCHAR(255),
   total_votes NUMERIC(6,0),
@@ -47,6 +51,7 @@ CREATE TABLE movies(
 
 CREATE TABLE meetups(
   id SERIAL PRIMARY KEY,
+  created_at BIGINT,
   link VARCHAR(255),
   name VARCHAR(255),
   host VARCHAR(255),
@@ -56,6 +61,8 @@ CREATE TABLE meetups(
 );
 
 CREATE TABLE trails(
+  id SERIAL PRIMARY KEY,
+  created_at BIGINT,
   trail_url VARCHAR(255),
   name VARCHAR(255),
   location VARCHAR(255),
