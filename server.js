@@ -263,8 +263,8 @@ function getMovies(request, response) {
     location: request.query.data,
     cacheHit: function (result) {
       let ageOfResults = (Date.now() - result.rows[0].created_at);
-      if(ageOfResults > timeouts.weather) {
-        deleteByLocationId('weathers', this.location.id);
+      if(ageOfResults > timeouts.movies) {
+        deleteByLocationId('movies', this.location.id);
         this.cacheMiss();
       } else {
         response.send(result.rows);
@@ -322,8 +322,8 @@ function getMeetups(request, response){
     location: request.query.data,
     cacheHit: function(result){
       let ageOfResults = (Date.now() - result.rows[0].created_at);
-      if(ageOfResults > timeouts.weather) {
-        deleteByLocationId('weathers', this.location.id);
+      if(ageOfResults > timeouts.meetups) {
+        deleteByLocationId('meetups', this.location.id);
         this.cacheMiss();
       } else {
         response.send(result.rows);
@@ -374,8 +374,8 @@ function getTrails(request, response) {
     location: request.query.data,
     cacheHit: function (result) {
       let ageOfResults = (Date.now() - result.rows[0].created_at);
-      if(ageOfResults > timeouts.weather) {
-        deleteByLocationId('weathers', this.location.id);
+      if(ageOfResults > timeouts.trails) {
+        deleteByLocationId('trails', this.location.id);
         this.cacheMiss();
       } else {
         response.send(result.rows);
