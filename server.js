@@ -26,6 +26,8 @@ app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
 
+app.get('/trails', getTrails);
+
 //start the server at the specified port
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
@@ -215,7 +217,6 @@ function getMovies(request, response) {
       response.send(result.rows);
     },
     cacheMiss: function() {
-      console.log(request.query.data);
       Movie.fetch(request.query.data)
         .then(results => response.send(results))
         .catch(console.error);
@@ -240,7 +241,7 @@ Movie.fetch = function(location) {
 };
 
 //Create a new movie object with the specified data as requested above.
-function Movie(film){
+function Movie(film) {
   this.title = film.title;
   this.released_on = film.release_date;
   this.total_votes = film.vote_count;
@@ -253,6 +254,67 @@ function Movie(film){
 //push movie to DB
 Movie.prototype.save = function(id) {
   const SQL = `INSERT INTO movies (title, released_on, total_votes, average_votes, popularity, image_url, overview, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
+  const values = Object.values(this);
+  values.push(id);
+  client.query(SQL, values);
+}
+
+//MEETUP FUNCTIONS ------------------------------------------------------------------------------------------------
+
+
+
+
+
+//HIKING FUNCTIONS ------------------------------------------------------------------------------------------------
+
+//sending info from DB to front end, if not in DB sending from API
+function getTrails(request, response) {
+  const handler = {
+    location: request.query.data,
+    cacheHit: function (result) {
+      response.send(result.rows);
+    },
+    cacheMiss: function() {
+      Trail.fetch(request.query.data)
+        .then(results => response.send(results))
+        .catch(console.error);
+    },
+  };
+  lookup(handler, 'trails');
+}
+
+//ping API for trail info
+Trail.fetch = function(location) {
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${location.latitude}&lon=${location.longitude}&maxDistance=25&key=${process.env.HIKING_API}`;
+  return superAgent.get(url)
+    .then(result => {
+      const trailSummaries = result.body.trails.map(trail => {
+        const summary = new Trail(trail);
+        summary.save(location.id);
+        return summary;
+      });
+      return trailSummaries;
+    });
+};
+
+//create new trail object for each trail with the requested data
+function Trail(data) {
+  const regex = /.+?[?= ]/;
+  this.trail_url = data.url;
+  this.name = data.name;
+  this.location = data.location;
+  this.length = data.length;
+  this.condition_date = new Date(data.conditionDate.slice(0,10)).slice(0,10);
+  this.condition_time = new Date(data.conditionDate).toLocaleString().replace(regex, '');
+  this.conditions = data.conditionDetails;
+  this.stars = data.stars;
+  this.star_votes = data.starVotes;
+  this.summary = data.summary;
+}
+
+//push movie to DB
+Trail.prototype.save = function(id) {
+  const SQL = `INSERT INTO trails (trail_url, name, location, length, condition_date, condition_time, conditions, stars, star_votes, summary) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
