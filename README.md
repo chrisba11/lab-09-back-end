@@ -15,9 +15,9 @@ Copy the deployed backend from heroku(https://city-explorer-backend-9.herokuapp.
 Using node.js, express, postgres, cors, and JQuery.
 
 ## Change Log
-10:30 am 1/17/19- Created the SQL database for persistence
+10:30 am 1/17/19- Created the SQL database for persistence.
 1:30 pm 1/17/19- Connected SQL to APIs, fills dynamically.
-5:30 pm 1/17/19- Deployed backend to heroku
+5:30 pm 1/17/19- Deployed backend to heroku.
 
 ## Credits and Collaborations
 Thanks to the creators of: Node.js, Postgres, CORS, dotenv, and superagent. 
