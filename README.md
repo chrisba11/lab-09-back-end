@@ -15,9 +15,12 @@ Copy the deployed backend from heroku(https://city-explorer-backend-9.herokuapp.
 Using node.js, express, postgres, cors, and JQuery.
 
 ## Change Log
-10:30 am 1/17/19- Created the SQL database for persistence.
-1:30 pm 1/17/19- Connected SQL to APIs, fills dynamically.
-5:30 pm 1/17/19- Deployed backend to heroku.
+- 10:30am 1/17/19 - Created the SQL database for persistence.
+- 1:30pm 1/17/19 - Connected SQL to APIs, fills dynamically.
+- 5:30pm 1/17/19 - Deployed backend to heroku.
+- 12:00pm 1/18/19 - Added APIs and SQL functionality for Meetups and Hiking APIs.
+- 2:00pm 1/18/19 - Implemented cache invalidation in database to reset data if older than specified ages.
+
 
 ## Credits and Collaborations
 Thanks to the creators of: Node.js, Postgres, CORS, dotenv, and superagent. 
