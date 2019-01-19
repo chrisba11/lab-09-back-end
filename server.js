@@ -42,7 +42,7 @@ function handleError(error, response){
 //LOCATION FUNCTIONS ------------------------------------------------------------------------------------------------
 
 //sending info from DB to front end, if not in DB sending from API
-function getLocation(request, response){
+function getLocation(request, response) {
   const locationHandler = {
     query: request.query.data,
 
@@ -80,7 +80,7 @@ Location.fetch = query => {
 
 //create a new location object that has the specified properties for each value returned above.
 function Location(query, apiResult) {
-  this.search_query = query;
+  this.search_query = query.toLowerCase();
   this.formatted_query = apiResult.body.results[0].formatted_address;
   this.latitude = apiResult.body.results[0].geometry.location.lat;
   this.longitude = apiResult.body.results[0].geometry.location.lng;
@@ -128,6 +128,7 @@ function lookup(handler, table) {
     .catch(error => handleError(error));
 }
 
+//delete table by location id used for any table
 function deleteByLocationId(table, cityId) {
   const SQL = `DELETE from ${table} WHERE location_id=${cityId};`;
   return client.query(SQL);
@@ -222,7 +223,7 @@ function getYelp(request, response) {
 Yelp.fetch = function(location) {
   const url = `https://api.yelp.com/v3/businesses/search?latitude=${location.latitude}&longitude=${location.longitude}`;
   return superAgent.get(url)
-    .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
+    .set({'Authorization': 'Bearer ' + process.env.YELP_API_KEY})
     .then(result => {
       const yelpSummaries = result.body.businesses.map(business => {
         const summary = new Yelp(business);
@@ -313,7 +314,6 @@ Movie.prototype.save = function(id) {
 //MEETUP FUNCTIONS ------------------------------------------------------------------------------------------------
 
 function getMeetups(request, response){
-  console.log('runs get meetups');
   const handler = {
     location: request.query.data,
     cacheHit: function(result) {
