@@ -26,8 +26,6 @@ app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
 app.get('/meetups', getMeetups);
-
-
 app.get('/trails', getTrails);
 
 //start the server at the specified port
@@ -140,7 +138,7 @@ const timeouts = {
   movies: 7 * 24 * 60 * 60 * 1000,
   meetups: 6 * 60 * 60 * 1000,
   trails: 3 * 60 * 60 * 1000,
-}
+};
 
 //WEATHER FUNCTIONS ------------------------------------------------------------------------------------------------
 
@@ -250,7 +248,7 @@ Yelp.prototype.save = function(id) {
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
-}
+};
 
 //MOVIE FUNCTIONS ------------------------------------------------------------------------------------------------
 
@@ -309,7 +307,7 @@ Movie.prototype.save = function(id) {
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
-}
+};
 
 //MEETUP FUNCTIONS ------------------------------------------------------------------------------------------------
 
@@ -334,6 +332,7 @@ function getMeetups(request, response){
   lookup(handler, 'meetups');
 }
 
+//ping API for meetup info
 Meetup.fetch = function(location) {
   const url = `https://api.meetup.com/find/upcoming_events?key=${process.env.MEETUP_API}&sign=true&photo-host=public&lon=${location.longitude}&page=20&lat=${location.latitude}`;
   return superAgent.get(url)
@@ -347,6 +346,7 @@ Meetup.fetch = function(location) {
     });
 };
 
+//Create a new meetup object with the specified data as requested above.
 function Meetup(meet) {
   this.created_at = Date.now();
   this.link = meet.link;
@@ -355,14 +355,15 @@ function Meetup(meet) {
   this.creation_date = new Date(meet.created).toString().slice(0,15) === 'Invalid Date' ? 'No date provided.' : new Date(meet.created).toString().slice(0,15);
 }
 
+//push meetup to DB
 Meetup.prototype.save = function(id) {
   const SQL = `INSERT INTO meetups (created_at, link, name, host, creation_date, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
-}
+};
 
-//HIKING FUNCTIONS ------------------------------------------------------------------------------------------------
+//TRAILS FUNCTIONS ------------------------------------------------------------------------------------------------
 
 //sending info from DB to front end, if not in DB sending from API
 function getTrails(request, response) {
@@ -422,4 +423,4 @@ Trail.prototype.save = function(id) {
   const values = Object.values(this);
   values.push(id);
   client.query(SQL, values);
-}
+};
